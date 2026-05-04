@@ -10,6 +10,9 @@
 #  endif
 #  include <GL/glut.h>
 #  include <GL/glext.h>
+#  if defined(_WIN32)
+PFNGLLOADTRANSPOSEMATRIXDPROC glLoadTransposeMatrixd;
+#  endif
 #endif
 #include <stdio.h>
 #include <stdlib.h>
