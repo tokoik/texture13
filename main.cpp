@@ -18,6 +18,12 @@ PFNGLLOADTRANSPOSEMATRIXDPROC glLoadTransposeMatrixd;
 #include <stdlib.h>
 #include <math.h>
 
+/* トラックボール処理用関数の宣言 */
+#include "trackball.h"
+
+/* 箱を描く関数の宣言 */
+#include "box.h"
+
 /*
 ** 光源
 */
@@ -31,7 +37,7 @@ static const GLfloat lightamb[] = { 0.1f, 0.1f, 0.1f, 1.0f }; /* 環境光強度
 #define TEXWIDTH  1024                              /* テクスチャの幅　　　 */
 #define TEXHEIGHT 128                               /* テクスチャの高さ　　 */
 static const char texture_file[] = "dice.raw";      /* テクスチャファイル名 */
-static GLuint texname[1];                           /* テクスチャ名（番号） */
+static GLuint cubemap;                              /* テクスチャ名（番号） */
 
 /*
 ** 初期化
@@ -56,15 +62,29 @@ static void init(void)
   }
 #endif
 
-  /* テクスチャネームを１個生成する */
-  glGenTextures(1, texname);
-
-  /* テクスチャ画像はワード単位に詰め込まれている */
-  glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
-
   /* テクスチャの割り当て */
   glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, TEXWIDTH, TEXHEIGHT, 0,
     GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+
+  /* テクスチャを拡大・縮小する方法の指定 */
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+
+  /* テクスチャの繰り返し方法の指定 */
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+  /* テクスチャ環境 */
+  glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
+
+#if 0
+  /* 混合する色の設定 */
+  static const GLfloat blend[] = { 0.0f, 1.0f, 0.0f, 1.0f };
+  glTexEnvfv(GL_TEXTURE_ENV, GL_TEXTURE_ENV_COLOR, blend);
+#endif
+
+  /* キューブマップ用のテクスチャ名を１個生成する */
+  glGenTextures(1, &cubemap);
 
   for (int i = 0; i < 6; ++i) {
     /* テクスチャファイル名 */
@@ -95,33 +115,21 @@ static void init(void)
       /* テクスチャの置き換え */
       glTexSubImage2D(GL_TEXTURE_2D, 0, i * 128, 0, 128, 128,
         GL_RGBA, GL_UNSIGNED_BYTE, texture);
+
+      /* キューブマップのテクスチャ名を指定する */
+      glBindTexture(GL_TEXTURE_CUBE_MAP, cubemap);
+
       /* キューブマッピングのテクスチャの割り当て */
-      glBindTexture(GL_TEXTURE_CUBE_MAP, texname[0]);
       glTexImage2D(target[i], 0, GL_RGBA, 128, 128, 0, 
         GL_RGBA, GL_UNSIGNED_BYTE, texture);
+
+      /* 無名テクスチャに戻す */
       glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
     }
   }
 
-  /* テクスチャを拡大・縮小する方法の指定 */
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-
-  /* テクスチャの繰り返し方法の指定 */
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
-  /* テクスチャ環境 */
-  glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-
-#if 0
-  /* 混合する色の設定 */
-  static const GLfloat blend[] = { 0.0f, 1.0f, 0.0f, 1.0f };
-  glTexEnvfv(GL_TEXTURE_ENV, GL_TEXTURE_ENV_COLOR, blend);
-#endif
-
-  /* 設定対象をtexname[0] のテクスチャに切り替える */
-  glBindTexture(GL_TEXTURE_CUBE_MAP, texname[0]);
+  /* ２つ目のテクスチャ名を指定する */
+  glBindTexture(GL_TEXTURE_CUBE_MAP, cubemap);
 
   /* テクスチャを拡大・縮小する方法の指定 */
   glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -136,7 +144,7 @@ static void init(void)
   glTexGeni(GL_T, GL_TEXTURE_GEN_MODE, GL_REFLECTION_MAP);
   glTexGeni(GL_R, GL_TEXTURE_GEN_MODE, GL_REFLECTION_MAP);
 
-  /* 設定対象を無名テクスチャに戻す */
+  /* 無名テクスチャに戻す */
   glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
 
   /* 初期設定 */
@@ -158,12 +166,6 @@ static void init(void)
 #endif
 }
 
-/* トラックボール処理用関数の宣言 */
-#include "trackball.h"
-
-/* 箱を描く関数の宣言 */
-#include "box.h"
-
 /*
 ** シーンの描画
 */
@@ -174,11 +176,8 @@ static void scene(void)
   /* 材質の設定 */
   glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, color);
 
-  /* 設定対象をtexname[0] のテクスチャに切り替える*/
-  glBindTexture(GL_TEXTURE_CUBE_MAP, texname[0]);
-
-  /* テクスチャ環境 */
-  glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+  /* キューブマップのテクスチャを指定する */
+  glBindTexture(GL_TEXTURE_CUBE_MAP, cubemap);
 
   /* キューブマッピングを有効にする */
   glEnable(GL_TEXTURE_CUBE_MAP);
@@ -193,7 +192,7 @@ static void scene(void)
 
   /* 視点より少し奥にティーポットを描く */
   glPushMatrix();
-  glTranslated(0.0, 0.0, -5.0);
+  glTranslated(0.0, 0.0, -3.0);
   glutSolidTeapot(1.0);
   glPopMatrix();
 
@@ -211,9 +210,6 @@ static void scene(void)
   /* 設定対象を無名テクスチャに戻す */
   glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
 
-  /* テクスチャ環境 */
-  glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
-
   /* テクスチャマッピング開始 */
   glEnable(GL_TEXTURE_2D);
 
@@ -221,7 +217,7 @@ static void scene(void)
   glMultMatrixd(trackballRotation());
 
   /* 箱を描く */
-  box(1.0, 1.0, 1.0);
+  box(5.0, 5.0, 5.0);
 
   /* テクスチャマッピング終了 */
   glDisable(GL_TEXTURE_2D);
