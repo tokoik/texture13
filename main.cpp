@@ -242,6 +242,11 @@ static void display(void)
   //gluLookAt(1.5, 2.0, 2.5, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
 #endif
 
+#if 0
+  /* トラックボール処理で図形を回転 */
+  glMultMatrixd(trackballRotation());
+#endif
+
   /* 画面クリア */
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
