@@ -159,7 +159,7 @@ static void init(void)
   glLightfv(GL_LIGHT0, GL_SPECULAR, lightcol);
   glLightfv(GL_LIGHT0, GL_AMBIENT, lightamb);
 
-#if defined(WIN32)
+#if defined(_WIN32)
   glLoadTransposeMatrixd =
     (PFNGLLOADTRANSPOSEMATRIXDPROC)wglGetProcAddress("glLoadTransposeMatrixd");
 #endif
