@@ -115,13 +115,13 @@ cd build
 
     6 つの画像ファイル (`room2ny.raw` など) を順番に読み込みます。このループの中で、以下の 2 つの処理を同時に行っています。
     - **2D テクスチャへの部分的な置き換え:** 読み込んだ画像を [`glTexSubImage2D()`](https://registry.khronos.org/OpenGL-Refpages/gl2.1/xhtml/glTexSubImage2D.xml) を使って、先に確保した 1024x128 の 2D テクスチャ領域の一部に順次転送します。
-    - **キューブマップへの割り当て:** [`glBindTexture(` `GL_TEXTURE_CUBE_MAP, cubemap)`](https://registry.khronos.org/OpenGL-Refpages/gl2.1/xhtml/glBindTexture.xml) でテクスチャオブジェクトをバインドしたのち、[`glTexImage2D()`](https://registry.khronos.org/OpenGL-Refpages/gl2.1/xhtml/glTexImage2D.xml) のターゲットに `GL_TEXTURE_CUBE_MAP_POSITIVE_X` などを指定して、各面の画像をキューブマップのデータとして設定します。設定が終わったら、`glBindTexture(GL_TEXTURE_CUBE_MAP, 0)` を呼び出して無名テクスチャに戻しています。
+    - **キューブマップへの割り当て:** [`glBindTexture(` `GL_TEXTURE_CUBE_MAP, cubemap)`](https://registry.khronos.org/OpenGL-Refpages/gl2.1/xhtml/glBindTexture.xml) でテクスチャオブジェクトをバインドしたのち、[`glTexImage2D()`](https://registry.khronos.org/OpenGL-Refpages/gl2.1/xhtml/glTexImage2D.xml) のターゲットに `GL_TEXTURE_CUBE_MAP_POSITIVE_X` などを指定して、各面の画像をキューブマップのデータとして設定します。設定が終わったら、`glBindTexture(` `GL_TEXTURE_CUBE_MAP`, 0 `)` を呼び出して無名テクスチャに戻しています。
 
 4. **環境マッピングのためのテクスチャ座標の自動生成:**
 
     再度キューブマップのテクスチャオブジェクトをバインドした状態で、[`glTexGeni()`](https://registry.khronos.org/OpenGL-Refpages/gl2.1/xhtml/glTexGen.xml) を使用してテクスチャ座標 (S, T, R) の生成モードを `GL_REFLECTION_MAP`（環境マッピング）に設定します。
 
-### 4.2 面ごとのテクスチャ座標の割り当て (box.cpp 内の box() 関数)
+### 4.2 面ごとのテクスチャ座標の割り当て (box.cpp 内の `box()` 関数)
 
 部屋として描画する立方体の処理です。結合された 1 つの 2D テクスチャを 6 つの面に分割して貼り付けるため、[`glTexCoord2dv()`](https://registry.khronos.org/OpenGL-Refpages/gl2.1/xhtml/glTexCoord.xml) を使って面ごとに 1/8（0.125）ずつの幅でテクスチャ座標を切り分けて割り当てています。
 
@@ -140,16 +140,16 @@ cd build
 
 1. **ティーポット（環境マッピング）の描画:**
 
-    - `glBindTexture(GL_TEXTURE_CUBE_MAP, cubemap)` でキューブマップ用のテクスチャオブジェクトを有効にします。
-    - `glEnable(GL_TEXTURE_CUBE_MAP)` と、各テクスチャ座標の自動生成 (`GL_TEXTURE_GEN_S` など) を有効にします。
-    - 視点が常に原点にあるため、背景（部屋）の回転に合わせてティーポットへの環境マッピングの映り込みも回転させる必要があります。そのため、`glMatrixMode(GL_TEXTURE)` でテクスチャ行列にトラックボールの回転 (`trackballRotation()`) を適用します。このとき、[`glLoadTransposeMatrixd()`](https://registry.khronos.org/OpenGL-Refpages/gl2.1/xhtml/glLoadTransposeMatrix.xml) を使うことで、映り込みが背景に対して正しい方向に回転するようにします。
-    - 視点の前方 (`Z = -3.0`) に `glutSolidTeapot(1.0)` でティーポットを描画します。
+    - `glBindTexture(` `GL_TEXTURE_CUBE_MAP`, cubemap `)` でキューブマップ用のテクスチャオブジェクトを有効にします。
+    - `glEnable(` `GL_TEXTURE_CUBE_MAP` `)` と、各テクスチャ座標の自動生成 (`GL_TEXTURE_GEN_S` など) を有効にします。
+    - 視点が常に原点にあるため、背景（部屋）の回転に合わせてティーポットへの環境マッピングの映り込みも回転させる必要があります。そのため、`glMatrixMode(` `GL_TEXTURE` `)` でテクスチャ行列にトラックボールの回転 (`trackballRotation()`) を適用します。このとき、[`glLoadTransposeMatrixd()`](https://registry.khronos.org/OpenGL-Refpages/gl2.1/xhtml/glLoadTransposeMatrix.xml) を使うことで、映り込みが背景に対して正しい方向に回転するようにします。
+    - 視点の前方 (`Z = -3.0`) に `glutSolidTeapot(` 1.0 `)` でティーポットを描画します。
     - 描画後、テクスチャ行列を元に戻し、キューブマップと自動生成を無効化し、バインドを `0`（無名テクスチャ）に戻します。
 
 2. **部屋（2D テクスチャ）の描画:**
 
-    - `glEnable(GL_TEXTURE_2D)` で 2D テクスチャ（無名テクスチャ）を有効にします。
-    - `GL_MODELVIEW` 行列に対してトラックボールの回転 (`glMultMatrixd(trackballRotation())`) を適用し、部屋全体を回転させることで、見回しているような効果を作ります。
-    - `box(5.0, 5.0, 5.0)` で部屋となる大きな箱を描画します。箱の内側を見るため、初期化 (`init()`) 時に `glDisable(GL_CULL_FACE)` が指定されています。
+    - `glEnable(` `GL_TEXTURE_2D` `)` で 2D テクスチャ（無名テクスチャ）を有効にします。
+    - `GL_MODELVIEW` 行列に対してトラックボールの回転 (`glMultMatrixd(` `trackballRotation()` `)`) を適用し、部屋全体を回転させることで、見回しているような効果を作ります。
+    - 原点にある視点の前に置いたティーポットが箱（部屋）の中に収まるように、箱を `box(` 5.0, 5.0, 5.0 `)` というように大きくします。箱の内側を見るため、裏側を向いた箱の面がカリングされないように、初期化 (`init()`) 時に `glDisable(` `GL_CULL_FACE` `)` を指定します。
 
 ![ティーポットへの映り込みも回転する](https://tokoik.github.io/blog/assets/images/texture13.gif)
