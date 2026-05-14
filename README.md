@@ -152,4 +152,4 @@ cd build
     - `GL_MODELVIEW` 行列に対してトラックボールの回転 (`glMultMatrixd(` `trackballRotation()` `)`) を適用し、部屋全体を回転させることで、見回しているような効果を作ります。
     - 原点にある視点の前に置いたティーポットが箱（部屋）の中に収まるように、箱を `box(` 5.0, 5.0, 5.0 `)` というように大きくします。箱の内側を見るため、裏側を向いた箱の面がカリングされないように、初期化 (`init()`) 時に `glDisable(` `GL_CULL_FACE` `)` を指定します。
 
-![ティーポットへの映り込みも回転する](https://tokoik.github.io/blog/assets/images/texture13.gif)
+![ティーポットへの映り込みも回転する](https://tokoik.github.io/blog/assets/images/texture13.webp)
